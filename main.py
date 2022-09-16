@@ -1,9 +1,7 @@
 import os
-from tkinter import Tk, StringVar, OptionMenu, Grid, Frame, Button, Text, Label, X, LEFT, RIGHT, DISABLED
+from tkinter import Tk, StringVar, OptionMenu, Grid, Frame, Button, Text, Label, RIGHT, DISABLED, Scrollbar
 from tkinter.filedialog import askopenfilenames, askdirectory
-from pptx import Presentation
-from pptx.util import Inches
-from templates import new_presentation
+from templates import new_presentation, Slide
 from PIL import Image, ImageTk
 
 CWD = os.path.dirname(os.path.realpath(__file__))  # current working directory
@@ -11,10 +9,13 @@ root = Tk()
 root.geometry("1000x700")
 
 slide_frame = Frame(root)
+scrollbar_slide_frame = Scrollbar(slide_frame, orient="vertical")
+slide_button_frames = []
+
 initial_frame = Frame(root)
 templates_frame = Frame(root)
 
-slides = []  # contains the reference to
+slides = {}  # contains the reference to
 
 
 def main():
@@ -40,23 +41,23 @@ def create_initial_frame():
 
 def create_templates_frame(frame, title_widget):
     global slides, template_names, template_files
-    new_prs = new_presentation(title_widget.get("1.0", "end-1c"))
-    slides = []
+    new_prs = new_presentation(title_widget.get("1.0", "end-1c"))  #  TODO put this variable in global first
+    slides = {}
 
     frame.grid_forget()
 
     template_files = []
+    template_names = []
     while not template_files:
         template_dir = askdirectory(title='Select Template Directory', initialdir=CWD)
         # template_files = askopenfilenames(title='Select All Templates You Want To Use', initialdir=CWD,
         #                                   filetypes=[("PowerPoint Presentation", "*.pptx")])
-        template_files = os.listdir(template_dir)
-        for template_file in template_files:
+        for template_file in os.listdir(template_dir):
             if not template_file.endswith(".pptx"):
                 template_files = None
                 break
-
-    template_names = list(map(lambda x: os.path.basename(x), template_files))  # stores the PowerPoint templates names
+        template_names = os.listdir(template_dir)  # stores the PowerPoint templates names
+        template_files = list(map(lambda x: template_dir + "/" +  x, template_names))
 
     val = StringVar(templates_frame)
     val.set(template_names[0])
@@ -64,7 +65,8 @@ def create_templates_frame(frame, title_widget):
     menu = OptionMenu(templates_frame, val, *template_names)  # Option menu to select templates
     # menu.grid(row=0, column=0, sticky="NSEW")
 
-    template_button = Button(templates_frame, text="Add Template Slide", command=lambda: add_slide(val.get()))
+    template_button = Button(templates_frame, text="Add Template Slide",
+                             command=lambda: add_slide(val.get()))
 
     templates_frame.grid(row=1, column=1, sticky="")
     for c in templates_frame.children:
@@ -73,28 +75,54 @@ def create_templates_frame(frame, title_widget):
     root.columnconfigure((0, 1, 2, 3), weight=1)
 
 
+# TODO remember to regrid all slide buttons and change slide numbers when you delete a slide button
 def add_slide(template_name):
     global slides, template_names, template_files
     template_file = template_files[template_names.index(template_name)]  # getting the template file to add to queue
-    slides.append(template_file)
+    slide = Slide(template_file)
+    slides[len(slides.keys()) + 1] = slide
 
+    temp_frame = create_slide_button_frame(template_name)
+    slide_button_frames.append(temp_frame)
+
+    slide_frame.grid(row=1, column=2, sticky="")
+    scrollbar_slide_frame.grid(row=0, column=10, sticky="W", rowspan=100)  # TODO fix scrollbar
+
+
+def organize_slides():
+    global slides
+    keys = sorted(slides.keys())
+    slides_to_sort = []
+    for key in keys:
+        slides_to_sort.append(slides[key])
+    slides = {key: slides_to_sort[key] for key in range(1, len(keys) + 1)}
+
+
+def create_slide_button_frame(template_name):
     temp_frame = Frame(slide_frame)
-    slide_button = Button(temp_frame, text=os.path.splitext(template_name)[0], command=lambda: image_viewer("sdf"))
+    slide_button = Button(temp_frame, text=os.path.splitext(template_name)[0],
+                          command=lambda: image_viewer(len(slides.keys())))
     slide_button.grid(row=0, column=1)
 
-    label_num = Label(temp_frame, text=str(len(slides)))
+    label_num = Label(temp_frame, text=str(len(slides.keys())))
     label_num.grid(row=0, column=0)
 
-    temp_frame.pack()
-    slide_frame.grid(row=1, column=2, sticky="")
+    temp_frame.grid()
+    return temp_frame
+
+
+def show_slide_button_frame():
+    return 0
 
 
 # code I got from geek for geeks for image viewer
 
-def image_viewer(image_paths):
+def image_viewer(slide_num):
     templates_frame.grid_forget()
     slide_frame.grid_forget()
-    image_paths = askopenfilenames(initialdir=CWD)
+    slide = slides[slide_num]
+    if slide.images_with_correct_index is None:
+        image_paths = askopenfilenames(initialdir=CWD)
     image_index = 1
 
     # TODO need to do a check here for the number of images required for each template
