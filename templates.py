@@ -56,7 +56,9 @@ def add_pictures_text(presentation: Presentation, template: Presentation, new_sl
     img_count = 0
     text_count = 0
     for slide in template.slides:
-        for shape in slide.shapes:
+        shapes = list(slide.shapes)
+        shapes.reverse()
+        for shape in shapes:
             if isinstance(shape,
                           pptx.shapes.autoshape.Shape) and shape.has_text_frame:  # In this case the autoshape in
                 # question is a textbox
@@ -94,8 +96,3 @@ def save_presentation(presentation: Presentation, slides, title):
     if not (os.path.exists(full_pres_dir_path) and os.path.isdir(full_pres_dir_path)):
         os.mkdir(full_pres_dir_path)  # create directory if it does not exist
     presentation.save(full_pres_dir_path + "/" + title + ".pptx")
-
-# new_prs, title = new_presentation("test3")
-# blank_slide_layout = new_prs.slide_layouts[6]
-# add_pictures_text(new_prs, prs, None)
-# new_prs.save(title + '.pptx')
