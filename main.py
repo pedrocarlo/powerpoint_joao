@@ -57,16 +57,26 @@ def create_templates_frame(frame, title):
 
     template_files = []
     template_names = []
-    while not template_files:
-        template_dir = ""
-        while template_dir == "":
-            template_dir = askdirectory(title='Select Template Directory', initialdir=CWD)
-        for template_file in os.listdir(template_dir):
-            if not template_file.endswith(".pptx"):
-                template_files = None
-                break
-        template_names = os.listdir(template_dir)  # stores the PowerPoint templates names
-        template_files = list(map(lambda x: template_dir + "/" + x, template_names))
+    template_dir = askdirectory(title='Select Template Directory', initialdir=CWD)
+    if template_dir == "":
+        initial_frame.grid(sticky="")
+        Label(initial_frame,
+              text="Please Select a template Folder with only *.pptx files inside",
+              bg="red").grid(row=3, column=0, pady=20)
+        return
+
+    for template_file in os.listdir(template_dir):
+        if not template_file.endswith(".pptx"):
+            template_dir = ""
+            break
+    if template_dir == "" or not os.listdir(template_dir):
+        initial_frame.grid(sticky="")
+        Label(initial_frame,
+              text="Please Select a template Folder with only *.pptx files inside",
+              bg="red").grid(row=4, column=0, pady=20)
+        return
+    template_names = os.listdir(template_dir)  # stores the PowerPoint templates names
+    template_files = list(map(lambda x: template_dir + "/" + x, template_names))
 
     val = StringVar(templates_frame)
     val.set(template_names[0])
@@ -159,9 +169,11 @@ def image_viewer(slide_num):
     slide_frame.grid_forget()
     slide = slides[slide_num]
     if slide.images is None:
-        image_paths = ""
-        while image_paths == "":
-            image_paths = list(askopenfilenames(initialdir=CWD, filetypes=[("Image Files", "*.png *.jpeg *.jpg")]))
+        image_paths = list(askopenfilenames(initialdir=CWD, filetypes=[("Image Files", "*.png *.jpeg *.jpg")]))
+        if not image_paths:
+            templates_frame.grid(row=1, column=1, sticky="")
+            slide_frame.grid(row=1, column=2, sticky="")
+            return
         slide.update_images(image_paths)
     num_img, num_text = slide.num_images, slide.num_text
     if slide.texts is None:
