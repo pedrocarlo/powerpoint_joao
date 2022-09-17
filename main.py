@@ -27,7 +27,7 @@ def main():
 
 def create_initial_frame():
     title = Text(initial_frame, height=1, width=15)
-    title_label = Label(initial_frame, text="Put your presentation Title")
+    title_label = Label(initial_frame, text="Write your presentation Title")
 
     new_prs_button = Button(master=initial_frame, text="New Presentation",
                             command=lambda: curry_check_title_pres(initial_frame, title.get('1.0', "end-1c")))
@@ -77,7 +77,7 @@ def create_templates_frame(frame, title):
     template_button = Button(templates_frame, text="Add Template Slide",
                              command=lambda: add_new_slide(val.get()))
 
-    save_button = Button(templates_frame, text="Save Presentaion",
+    save_button = Button(templates_frame, text="Save Presentation",
                          command=lambda: save_presentation(title))
 
     templates_frame.grid(row=1, column=1, sticky="")

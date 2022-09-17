@@ -2,7 +2,7 @@ from typing import List, Dict
 import os
 import pptx.shapes.picture
 from pptx import Presentation
-from pptx.util import Inches
+from pptx.util import Inches, Pt
 
 BLANK_SLIDE = 6
 slide_height = Inches(7.5).emu  # Default Slide Height
@@ -69,7 +69,22 @@ def add_pictures_text(presentation: Presentation, template: Presentation, new_sl
                     width = shape.width
                     txBox = new_pres_slide.shapes.add_textbox(left, top, width, height)
                     tf = txBox.text_frame
+                    text_list = new_slide.texts[text_count].split("\n")
+                    for i in range(len(text_list)):
+                        tf.add_paragraph()
+                    for i in range(len(tf.paragraphs)):
+                        p = tf.paragraphs[i]
+                        run = p.add_run()
+                        p.alignment = shape.text_frame.paragraphs[i].alignment
+                        font = run.font
+                        font.name = "Franklin Gothic Demi"
+                        font.size = Pt(24)
+                        font.bold = True
+                        font.italic = False
+                        run.text = text_list[i]
+
                     tf.text = new_slide.texts[text_count]  # TODO CHANGE TEXT HERE TO BE FROM SLIDE
+
                 except IndexError:  # If user does not supply enough text boxes the code will still run
                     continue
                 text_count += 1
