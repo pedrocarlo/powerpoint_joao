@@ -1,3 +1,4 @@
+from tkinter.filedialog import askdirectory
 from typing import List, Dict
 import os
 import pptx.shapes.picture
@@ -101,13 +102,12 @@ def add_pictures_text(presentation: Presentation, template: Presentation, new_sl
                 img_count += 1
 
 
-def save_presentation(presentation: Presentation, slides, title):
+def save_presentation(presentation: Presentation, slides, title, template_dir):
     for slide in slides.values():
         add_pictures_text(presentation, slide.template, slide)
-    #  check if presentations folder exists
-    presentation_dir = "presentations"
-    CWD = os.path.dirname(os.path.realpath(__file__))  # current working directory
-    full_pres_dir_path = CWD + "/" + presentation_dir
-    if not (os.path.exists(full_pres_dir_path) and os.path.isdir(full_pres_dir_path)):
-        os.mkdir(full_pres_dir_path)  # create directory if it does not exist
+    desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop')  # Desktop
+    presentation_dir = askdirectory(title='Select Template Directory', initialdir=os.path.dirname(template_dir))
+    full_pres_dir_path = presentation_dir
+    # if not (os.path.exists(full_pres_dir_path) and os.path.isdir(full_pres_dir_path)):
+    #     os.mkdir(full_pres_dir_path)  # create directory if it does not exist
     presentation.save(full_pres_dir_path + "/" + title + ".pptx")

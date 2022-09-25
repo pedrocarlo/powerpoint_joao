@@ -6,7 +6,7 @@ from PIL import Image, ImageTk
 
 from templates import new_presentation, Slide, save_presentation as save_pres
 
-CWD = os.path.dirname(os.path.realpath(__file__))  # current working directory
+desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop')  # DESKTOp
 root = Tk()
 root.geometry("1100x700")
 
@@ -16,6 +16,7 @@ slide_button_frames = []
 
 initial_frame = Frame(root)
 templates_frame = Frame(root)
+template_dir = ""
 
 slides = {}  # contains the reference to slides
 
@@ -26,7 +27,7 @@ def main():
 
 
 def create_initial_frame():
-    title = Text(initial_frame, height=1, width=15)
+    title = Text(initial_frame, height=1, width=40)
     title_label = Label(initial_frame, text="Write your presentation Title")
 
     new_prs_button = Button(master=initial_frame, text="New Presentation",
@@ -50,14 +51,14 @@ def curry_check_title_pres(parent_frame, title):
 
 
 def create_templates_frame(frame, title):
-    global slides, template_names, template_files
+    global slides, template_names, template_files, template_dir
     slides = {}
 
     frame.grid_forget()
 
     template_files = []
     template_names = []
-    template_dir = askdirectory(title='Select Template Directory', initialdir=CWD)
+    template_dir = askdirectory(title='Select Template Directory', initialdir=desktop)
     if template_dir == "":
         initial_frame.grid(sticky="")
         Label(initial_frame,
@@ -88,7 +89,7 @@ def create_templates_frame(frame, title):
                              command=lambda: add_new_slide(val.get()))
 
     save_button = Button(templates_frame, text="Save Presentation",
-                         command=lambda: save_presentation(title))
+                         command=lambda: save_presentation(title, template_dir))
 
     templates_frame.grid(row=1, column=1, sticky="")
     for c in templates_frame.children:
@@ -99,9 +100,9 @@ def create_templates_frame(frame, title):
     save_button.grid(pady=40)
 
 
-def save_presentation(title):
+def save_presentation(title, template_dir):
     new_prs, title = new_presentation(title)
-    save_pres(new_prs, slides, title)
+    save_pres(new_prs, slides, title, template_dir)
 
 
 def add_new_slide(template_name):
@@ -138,7 +139,7 @@ def create_slide_button_frame(template_name):
     temp_frame = Frame(slide_frame)
     slide_num = len(slides.keys())
     slide_button = Button(temp_frame, text=os.path.splitext(template_name)[0],
-                          command=lambda: image_viewer(slide_num))
+                          command=lambda: image_viewer(slide_num, os.path.splitext(template_name)[0]))
     slide_button.grid(row=0, column=1)
 
     label_num = Label(temp_frame, text=str(len(slides.keys())))
@@ -164,12 +165,13 @@ def delete_slide(slide_num: int):
 
 
 # code I got from geek for geeks for image viewer
-def image_viewer(slide_num):
+def image_viewer(slide_num, template_name):
     templates_frame.grid_forget()
     slide_frame.grid_forget()
     slide = slides[slide_num]
     if slide.images is None:
-        image_paths = list(askopenfilenames(initialdir=CWD, filetypes=[("Image Files", "*.png *.jpeg *.jpg")]))
+        image_paths = list(askopenfilenames(initialdir=os.path.dirname(template_dir),
+                                            filetypes=[("Image Files", "*.png *.jpeg *.jpg")]))
         if not image_paths:
             templates_frame.grid(row=1, column=1, sticky="")
             slide_frame.grid(row=1, column=2, sticky="")
@@ -285,7 +287,7 @@ def image_viewer(slide_num):
         initial_state()
 
     def initial_state():
-        nonlocal list_images, label, number_label, button_forward, button_back
+        nonlocal list_images, label, number_label, button_forward, button_back, template_name
         voltar = Button(image_frame, text="Voltar",
                         command=lambda: return_to_template_frame(image_frame, slide))
         voltar.grid(row=0, column=0, sticky="W")
@@ -319,8 +321,10 @@ def image_viewer(slide_num):
 
         image_count_label = Label(image_frame, text="Amount of Images on template: " + str(num_img))
         text_count_label = Label(image_frame, text="Amount of Text Boxes on template: " + str(num_text))
-        image_count_label.grid(row=0, column=1, sticky="W")
-        text_count_label.grid(row=0, column=2, sticky="W")
+        template_name_label = Label(image_frame, text=template_name, bg="grey")
+        template_name_label.grid(row=0, column=1, sticky="W")
+        image_count_label.grid(row=0, column=2, sticky="W")
+        text_count_label.grid(row=0, column=3, sticky="W")
 
         create_menus_orders()
 
