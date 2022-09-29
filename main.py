@@ -43,10 +43,16 @@ def create_initial_frame():
 
 
 def curry_check_title_pres(parent_frame, title):
+    forbidden_names = ["CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8",
+                       "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"]
     if title == "":
-        blank_title = Label(parent_frame, text="Title Cannot be Blank", bg="red")
-        blank_title.grid(row=3, column=0)
+        warning_label = Label(parent_frame, text="Title Cannot be Blank", bg="red")
+        warning_label.grid(row=3, column=0)
+    if title.upper() in forbidden_names:
+        warning_label = Label(parent_frame, text="Title Cannot be a Windows restricted filename", bg="red")
+        warning_label.grid(row=3, column=0)
     else:
+        title = "".join(x for x in title if x.isalnum())
         create_templates_frame(parent_frame, title)
 
 
@@ -169,6 +175,7 @@ def image_viewer(slide_num, template_name):
     templates_frame.grid_forget()
     slide_frame.grid_forget()
     slide = slides[slide_num]
+    image_paths = None
     if slide.images is None:
         image_paths = list(askopenfilenames(initialdir=os.path.dirname(template_dir),
                                             filetypes=[("Image Files", "*.png *.jpeg *.jpg")]))
@@ -176,7 +183,8 @@ def image_viewer(slide_num, template_name):
             templates_frame.grid(row=1, column=1, sticky="")
             slide_frame.grid(row=1, column=2, sticky="")
             return
-        slide.update_images(image_paths)
+
+        slide.update_images([Image.open(path) for path in image_paths])
     num_img, num_text = slide.num_images, slide.num_text
     if slide.texts is None:
         slide.texts = ["" for _ in range(num_text)]
@@ -194,7 +202,18 @@ def image_viewer(slide_num, template_name):
     button_frame = Frame(image_frame)
 
     def reselect_images():  # TODO
-        return 0
+        nonlocal image_paths, list_images, image_index
+        new_path = list(askopenfilenames(initialdir=os.path.dirname(template_dir),
+                                         filetypes=[("Image Files", "*.png *.jpeg *.jpg")]))
+        if not new_path:
+            return
+        image_paths = new_path
+        slide.update_images(image_paths)
+        image_index = 1
+        list_images = []
+        for c in label_frame.children:
+            label_frame.children[c].grid_forget()
+        initial_state()
 
     def next_image(direction: int):
         nonlocal label, button_forward, button_back, image_index, number_label, list_images
@@ -226,10 +245,11 @@ def image_viewer(slide_num, template_name):
         # create labels with image and text count
 
     def order_images():
-        nonlocal list_images
-        for path in slide.images:
-            i = Image.open(path).resize((500, 500))
+        nonlocal list_images, list_images_length
+        for img in slide.images:
+            i = img.resize((500, 500))
             list_images.append(ImageTk.PhotoImage(i))
+        list_images_length = len(list_images)
         return list_images
 
     def place_image():
@@ -264,6 +284,8 @@ def image_viewer(slide_num, template_name):
                              command=lambda: set_text(text_box.get("1.0", "end-1c"),
                                                       int(text_choice.get()) - 1))
 
+        reselect_images_button = Button(menu_frame, text="Reselect Images", command=reselect_images)
+
         menu_frame.grid(row=2, column=0, sticky="nsew")
 
         image_menu.grid(row=0, column=0)
@@ -271,6 +293,7 @@ def image_viewer(slide_num, template_name):
         text_menu.grid(row=1, column=0)
         text_button.grid(row=1, column=1, columnspan=3)
         text_box.grid(row=1, column=5)
+        reselect_images_button.grid(row=2, column=1, sticky="W")
 
     def set_text(text, text_index):
         slide.texts[text_index] = text

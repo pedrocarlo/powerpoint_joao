@@ -1,9 +1,11 @@
+import io
 from tkinter.filedialog import askdirectory
 from typing import List, Dict
 import os
 import pptx.shapes.picture
 from pptx import Presentation
 from pptx.util import Inches, Pt
+from PIL import Image, ImageTk
 
 BLANK_SLIDE = 6
 slide_height = Inches(7.5).emu  # Default Slide Height
@@ -11,7 +13,7 @@ slide_width = Inches(13.34).emu  # Default Slide Width
 
 
 class Slide:
-    def __init__(self, template_file: str, images: List[str] = None, texts: List[str] = None):
+    def __init__(self, template_file: str, images=None, texts: List[str] = None):
         if images is not None:
             self.images = images
         else:
@@ -71,7 +73,8 @@ def add_pictures_text(presentation: Presentation, template: Presentation, new_sl
                     txBox = new_pres_slide.shapes.add_textbox(left, top, width, height)
                     tf = txBox.text_frame
                     text_list = new_slide.texts[text_count].split("\n")
-                    for i in range(len(text_list)):
+                    for i in range(
+                            len(text_list) - 1):  # Have to put len - 1 as txBox.text_frame has one paragraph on its creation
                         tf.add_paragraph()
                     for i in range(len(tf.paragraphs)):
                         p = tf.paragraphs[i]
@@ -82,9 +85,10 @@ def add_pictures_text(presentation: Presentation, template: Presentation, new_sl
                         font.size = Pt(24)
                         font.bold = True
                         font.italic = False
-                        run.text = text_list[i]
-
-                    tf.text = new_slide.texts[text_count]  # TODO CHANGE TEXT HERE TO BE FROM SLIDE
+                        if not text_list[i]:
+                            run.text = "."
+                        else:
+                            run.text = text_list[i]
 
                 except IndexError:  # If user does not supply enough text boxes the code will still run
                     continue
@@ -94,8 +98,10 @@ def add_pictures_text(presentation: Presentation, template: Presentation, new_sl
                     left = shape.left
                     top = shape.top
                     height = shape.height
-                    new_pres_slide.shapes.add_picture(new_slide.images[img_count],
-                                                      left, top, height=height)
+                    with io.BytesIO() as output:
+                        new_slide.images[img_count].save(output, format="jpeg")
+                        new_pres_slide.shapes.add_picture(output,
+                                                          left, top, height=height)
                 except (IndexError, FileNotFoundError,
                         FileExistsError):  # if user does not submit enough photos it will still run
                     continue
