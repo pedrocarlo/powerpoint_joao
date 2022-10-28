@@ -208,7 +208,7 @@ def image_viewer(slide_num, template_name):
         if not new_path:
             return
         image_paths = new_path
-        slide.update_images(image_paths)
+        slide.update_images([Image.open(path) for path in image_paths])
         image_index = 1
         list_images = []
         for c in label_frame.children:

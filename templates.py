@@ -59,8 +59,7 @@ def add_pictures_text(presentation: Presentation, template: Presentation, new_sl
     img_count = 0
     text_count = 0
     for slide in template.slides:
-        shapes = list(slide.shapes)
-        shapes.reverse()
+        shapes = sorted(list(slide.shapes), key=lambda x: x.left)
         for shape in shapes:
             if isinstance(shape,
                           pptx.shapes.autoshape.Shape) and shape.has_text_frame:  # In this case the autoshape in
